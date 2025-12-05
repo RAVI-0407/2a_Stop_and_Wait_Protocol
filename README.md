@@ -13,52 +13,46 @@ To write a python program to perform stop and wait protocol
 ```
 import socket
 
-server = socket.socket()
-server.bind(('localhost', 8000))
-server.listen(1)
-print("Server is listening...")
-conn, addr = server.accept()
-print(f"Connected with {addr}")
+s = socket.socket()
+s.bind(('localhost', 8000))
+s.listen(1)
+print("Server ready...")
 
+c, _ = s.accept()
 while True:
-    data = conn.recv(1024).decode()
+    msg = c.recv(1024).decode()
+    if not msg:
+        break
+    print("Received:", msg)
+    c.send(b"ACK")
+    if msg == "exit":
+        break
 
-    if data:
-        print(f"Received: {data}")
-        conn.send("ACK".encode())
-
-        if data.lower() == 'exit':  
-            print("Connection closed by client")
-            conn.close()
-            break
+c.close()
+s.close()
 ```
 ## Client
 ```
-
 import socket
-import time
 
-client = socket.socket()
-client.connect(('localhost', 8000))
-client.settimeout(5)  
+c = socket.socket()
+c.connect(('localhost', 8000))
+c.settimeout(5)
 
 while True:
-    msg = input("Enter a message (or type 'exit' to quit): ")
+    msg = input("Message: ")
+    c.send(msg.encode())
 
-    client.send(msg.encode())  
-
-    if msg.lower() == 'exit':  
-        print("Connection closed by client")
-        client.close()
+    if msg == "exit":
         break
 
     try:
-        ack = client.recv(1024).decode()
-        if ack == "ACK":
-            print(f"Server acknowledged: {ack}")
+        if c.recv(1024).decode() == "ACK":
+            print("ACK received")
     except socket.timeout:
-        print("No ACK received, retransmitting...")
-        continue  
+        print("No ACK, retransmitting...")
+
+c.close()
 ```
 ## OUTPUT
 ## Server
